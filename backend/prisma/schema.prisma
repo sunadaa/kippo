@@ -1,0 +1,49 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 検索履歴テーブル
+// ユーザーの検索履歴を記録（将来的な機能拡張用）
+model SearchHistory {
+  id          Int      @id @default(autoincrement())
+  birthDate   String   // 生年月日 (YYYY-MM-DD)
+  address     String   // 住所
+  yearMonth   String   // 対象年月 (YYYY-MM)
+  radiusKm    Int      @default(20) // 検索半径
+  honmeisei   String   // 算出された本命星
+  createdAt   DateTime @default(now())
+  
+  // リレーション
+  favorites   Favorite[]
+  
+  @@index([createdAt])
+}
+
+// お気に入り神社・寺院テーブル
+// 検索結果からお気に入り登録された神社・寺院
+model Favorite {
+  id              Int            @id @default(autoincrement())
+  searchHistoryId Int
+  name            String         // 神社・寺院名
+  address         String         // 住所
+  lat             Float          // 緯度
+  lng             Float          // 経度
+  direction8      String         // 8方位 (N/NE/E/SE/S/SW/W/NW)
+  distanceKm      Float          // 距離
+  createdAt       DateTime       @default(now())
+  
+  // リレーション
+  searchHistory   SearchHistory  @relation(fields: [searchHistoryId], references: [id], onDelete: Cascade)
+  
+  @@index([searchHistoryId])
+  @@index([createdAt])
+}
+
