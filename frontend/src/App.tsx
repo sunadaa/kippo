@@ -1,7 +1,10 @@
-import { useState } from 'react'
-import './App.css'
-import { SearchForm, type SearchFormData } from './components/SearchForm'
-import { ResultsDisplay, type SearchResult } from './components/ResultsDisplay'
+import { useState } from "react";
+import "./App.css";
+import { SearchForm, type SearchFormData } from "./components/SearchForm";
+import { ResultsDisplay, type SearchResult } from "./components/ResultsDisplay";
+
+// APIエンドポイント（環境変数から取得、デフォルトはローカル）
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 function App() {
   const [loading, setLoading] = useState(false);
@@ -14,23 +17,25 @@ function App() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/fortune/recommendations', {
-        method: 'POST',
+      const response = await fetch(`${API_URL}/fortune/recommendations`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'エラーが発生しました');
+        throw new Error(errorData.message || "エラーが発生しました");
       }
 
       const data: SearchResult = await response.json();
       setResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
+      setError(
+        err instanceof Error ? err.message : "不明なエラーが発生しました"
+      );
     } finally {
       setLoading(false);
     }
@@ -55,14 +60,14 @@ function App() {
         {!result && !loading && !error && (
           <div className="max-w-2xl mx-auto text-center text-muted-foreground">
             <p className="text-sm">
-              💡 ヒント：生年月日と住所を入力して、吉方位にある神社・寺院を検索できます
+              💡
+              ヒント：生年月日と住所を入力して、吉方位にある神社・寺院を検索できます
             </p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default App
-
+export default App;
