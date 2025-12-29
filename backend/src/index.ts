@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import fortuneRoutes from "./routes/fortune";
+import historyRoutes from "./routes/history";
+import favoritesRoutes from "./routes/favorites";
 
 // 環境変数の読み込み
 dotenv.config();
@@ -60,6 +62,8 @@ app.use(express.json());
 
 // ルーティング
 app.use("/api/fortune", fortuneRoutes);
+app.use("/api/history", historyRoutes);
+app.use("/api/favorites", favoritesRoutes);
 
 // ヘルスチェックエンドポイント
 app.get("/health", (req: Request, res: Response) => {

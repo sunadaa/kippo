@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,10 +18,27 @@ export interface SearchFormData {
 }
 
 export function SearchForm({ onSearch, loading }: SearchFormProps) {
-  const [birthDate, setBirthDate] = useState('1978-03-10');
-  const [address, setAddress] = useState('東京都渋谷区');
-  const [yearMonth, setYearMonth] = useState('2025-02');
-  const [radiusKm, setRadiusKm] = useState(10);
+  const [searchParams] = useSearchParams();
+  
+  // クエリパラメータから初期値を取得、なければデフォルト値
+  const [birthDate, setBirthDate] = useState(searchParams.get('birthDate') || '1978-03-10');
+  const [address, setAddress] = useState(searchParams.get('address') || '東京都渋谷区');
+  const [yearMonth, setYearMonth] = useState(searchParams.get('yearMonth') || '2025-02');
+  const [radiusKm, setRadiusKm] = useState(Number(searchParams.get('radiusKm')) || 10);
+
+  // クエリパラメータが変更されたら自動的に検索を実行
+  useEffect(() => {
+    if (searchParams.has('birthDate') && searchParams.has('address')) {
+      // クエリパラメータから再検索
+      const formData = {
+        birthDate: searchParams.get('birthDate') || birthDate,
+        address: searchParams.get('address') || address,
+        yearMonth: searchParams.get('yearMonth') || yearMonth,
+        radiusKm: Number(searchParams.get('radiusKm')) || radiusKm,
+      };
+      onSearch(formData);
+    }
+  }, [searchParams]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
