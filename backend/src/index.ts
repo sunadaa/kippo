@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 
 // Expressアプリの作成
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // ミドルウェア設定
 // 複数のオリジンを許可（Vercelの複数ドメインに対応）
@@ -23,21 +23,37 @@ const allowedOrigins = [
   "https://kippo-frontend-gukn007ia-sunadaas-projects.vercel.app",
 ];
 
+// 環境変数から追加のオリジンを読み込む
+if (process.env.ALLOWED_ORIGINS) {
+  const envOrigins = process.env.ALLOWED_ORIGINS.split(",").map((o) =>
+    o.trim()
+  );
+  allowedOrigins.push(...envOrigins);
+}
+
 app.use(
   cors({
     origin: (origin, callback) => {
+      // デバッグログ
+      console.log(`CORS request from origin: ${origin}`);
+
       // オリジンなし（Postmanなど）またはVercelドメインを許可
       if (
         !origin ||
         allowedOrigins.includes(origin) ||
         origin.includes(".vercel.app")
       ) {
+        console.log(`CORS allowed for origin: ${origin}`);
         callback(null, true);
       } else {
+        console.log(`CORS blocked for origin: ${origin}`);
         callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200, // レガシーブラウザ対応
   })
 );
 app.use(express.json());
