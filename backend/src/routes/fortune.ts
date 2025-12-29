@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { calculateHonmeisei, getLuckyDirections } from '../utils/fortune';
+import { calculateHonmeisei, calculateLuckyDirections } from '../utils/fortune';
 import { geocodeAddress, searchNearbyPlaces } from '../utils/google';
 import { calculateDistanceAndDirection } from '../utils/geo';
 
@@ -49,41 +49,58 @@ router.post('/base-info', (req: Request, res: Response) => {
 /**
  * POST /api/fortune/lucky-directions
  * 
- * 本命星と年月から吉方位を取得
+ * 生年月日と年月から吉方位を動的に算出
  * 
  * リクエストボディ:
  * {
- *   "honmeisei": "四緑木星",
+ *   "birthDate": "1978-03-10",
  *   "yearMonth": "2025-02"
  * }
  * 
  * レスポンス:
  * {
- *   "directions": ["N", "E", "SE", "NW"]
+ *   "honmeisei": "四緑木星",
+ *   "honmeiseiNumber": 4,
+ *   "directions": ["N", "E"],
+ *   "yearPan": { "N": 1, "NE": 8, ... },
+ *   "monthPan": { "N": 6, "NE": 4, ... },
+ *   "unluckyDirections": {
+ *     "goouSatsu": ["CENTER"],
+ *     "ankenSatsu": ["CENTER"],
+ *     "honmeiSatsu": ["SE"],
+ *     "honmeiTekiSatsu": ["NW"]
+ *   }
  * }
  */
 router.post('/lucky-directions', (req: Request, res: Response) => {
   try {
-    const { honmeisei, yearMonth } = req.body;
+    const { birthDate, yearMonth } = req.body;
     
     // バリデーション
-    if (!honmeisei) {
+    if (!birthDate) {
       return res.status(400).json({
         error: 'Bad Request',
-        message: 'honmeisei is required',
+        message: 'birthDate is required',
       });
     }
     
-    // 吉方位を取得
-    const directions = getLuckyDirections(honmeisei, yearMonth);
+    if (!yearMonth) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'yearMonth is required',
+      });
+    }
     
-    res.json({ directions });
+    // 吉方位を動的に計算
+    const result = calculateLuckyDirections(birthDate, yearMonth);
+    
+    res.json(result);
   } catch (error) {
     console.error('Error in /api/fortune/lucky-directions:', error);
     
     res.status(400).json({
       error: 'Bad Request',
-      message: error instanceof Error ? error.message : 'Failed to get lucky directions',
+      message: error instanceof Error ? error.message : 'Failed to calculate lucky directions',
     });
   }
 });
@@ -148,13 +165,13 @@ router.post('/recommendations', async (req: Request, res: Response) => {
 
     console.log(`[Recommendations] Request received:`, { birthDate, address, yearMonth, radiusKm });
 
-    // 1. 本命星を算出
-    const honmeisei = calculateHonmeisei(birthDate);
-    console.log(`[Recommendations] Honmeisei calculated: ${honmeisei}`);
+    // yearMonthが未指定の場合、現在の年月を使用
+    const targetYearMonth = yearMonth || new Date().toISOString().slice(0, 7);
 
-    // 2. 吉方位を取得
-    const luckyDirections = getLuckyDirections(honmeisei, yearMonth);
-    console.log(`[Recommendations] Lucky directions: ${luckyDirections.join(', ')}`);
+    // 1. 本命星と吉方位を動的に算出
+    const luckyResult = calculateLuckyDirections(birthDate, targetYearMonth);
+    console.log(`[Recommendations] Honmeisei calculated: ${luckyResult.honmeisei}`);
+    console.log(`[Recommendations] Lucky directions: ${luckyResult.directions.join(', ')}`);
 
     // 3. 住所から座標を取得
     console.log(`[Recommendations] Geocoding address: ${address}`);
@@ -184,7 +201,7 @@ router.post('/recommendations', async (req: Request, res: Response) => {
     });
 
     // 6. 吉方位のみフィルタリング
-    const luckyDirectionsSet = new Set(luckyDirections);
+    const luckyDirectionsSet = new Set(luckyResult.directions);
     const filteredCandidates = candidates.filter((candidate) =>
       luckyDirectionsSet.has(candidate.direction8)
     );
@@ -194,12 +211,17 @@ router.post('/recommendations', async (req: Request, res: Response) => {
     // 7. 距離でソート
     filteredCandidates.sort((a, b) => a.distanceKm - b.distanceKm);
 
-    // レスポンス
+    // レスポンス（拡張版：年盤・月盤情報も含む）
     res.json({
-      honmeisei,
-      luckyDirections,
+      honmeisei: luckyResult.honmeisei,
+      honmeiseiNumber: luckyResult.honmeiseiNumber,
+      luckyDirections: luckyResult.directions,
       center,
       candidates: filteredCandidates,
+      // 追加情報（オプション）
+      yearPan: luckyResult.yearPan,
+      monthPan: luckyResult.monthPan,
+      unluckyDirections: luckyResult.unluckyDirections,
     });
   } catch (error) {
     console.error('Error in /api/fortune/recommendations:', error);
