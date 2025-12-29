@@ -83,8 +83,9 @@ app.use((err: Error, req: Request, res: Response, next: any) => {
 });
 
 // サーバー起動
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+const HOST = '0.0.0.0'; // Railway用：全てのネットワークインターフェースでリッスン
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Server is running on http://${HOST}:${PORT}`);
   console.log(`📝 API endpoints:`);
   console.log(`   - GET  /health                         - Health check`);
   console.log(`   - GET  /api/hello                      - Hello World`);
