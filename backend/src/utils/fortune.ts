@@ -78,7 +78,7 @@ export function calculateHonmeisei(birthDate: string): string {
  */
 export function getHonmeiseiNumber(birthDate: string): number {
   const honmeisei = calculateHonmeisei(birthDate);
-  return KYUSEI_NAMES.indexOf(honmeisei);
+  return KYUSEI_NAMES.indexOf(honmeisei as typeof KYUSEI_NAMES[number]);
 }
 
 /**

@@ -40,7 +40,7 @@ export async function geocodeAddress(address: string): Promise<Coordinates> {
     throw new Error(`Geocoding API request failed: ${response.statusText}`);
   }
 
-  const data = await response.json();
+  const data: any = await response.json();
 
   if (data.status !== 'OK') {
     throw new Error(`Geocoding failed: ${data.status} - ${data.error_message || 'Unknown error'}`);
@@ -126,7 +126,7 @@ async function searchByKeyword(
     throw new Error(`Places API request failed: ${response.statusText}`);
   }
 
-  const data = await response.json();
+  const data: any = await response.json();
 
   if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
     throw new Error(`Places API failed: ${data.status} - ${data.error_message || 'Unknown error'}`);
